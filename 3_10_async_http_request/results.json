@@ -1,3 +1,3 @@
-{"url": "https://example.com", "status_code": 200}
-{"url": "https://httpbin.org/status/404", "status_code": 404}
-{"url": "https://nonexistent.url", "status_code": 0}
+{"url": "https://nonexistent.url", "status_code": 0, "execution_time": 0.03888368606567383}
+{"url": "https://example.com", "status_code": 200, "execution_time": 0.9708797931671143}
+{"url": "https://httpbin.org/status/404", "status_code": 404, "execution_time": 2.037259817123413}

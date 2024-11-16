@@ -37,13 +37,12 @@ async def worker(queue, session, result_queue):
 async def result_writer(result_queue, file_path):
     with open(file_path, 'w') as f:
         while True:
-            try:
-                result, execution_time = await result_queue.get()
-                json.dump({'url': result[0], 'status_code': result[1], 'execution_time': execution_time}, f)
-                f.write('\n')
-                result_queue.task_done()
-            except asyncio.CancelledError:
+            result, execution_time = await result_queue.get()
+            if result is None:
                 break
+            json.dump({'url': result[0], 'status_code': result[1], 'execution_time': execution_time}, f)
+            f.write('\n')
+            result_queue.task_done()
 
 
 async def fetch_urls(urls, file_path):
@@ -67,7 +66,8 @@ async def fetch_urls(urls, file_path):
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
 
-        result_writer_task.cancel()
+        await result_queue.put((None, None))
+        await result_writer_task
 
 if __name__ == '__main__':
     print('script launch')

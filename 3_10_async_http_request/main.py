@@ -3,7 +3,6 @@ import asyncio
 import json
 import time
 
-semaphore = asyncio.Semaphore(5)
 
 urls = [
     "https://example.com",
@@ -12,7 +11,6 @@ urls = [
 ]
 
 async def fetch_url(session, url):
-    async with semaphore:
         try:
             async with session.get(url) as response:
                 print(f"Fetched {url} with code {response.status}")
@@ -35,6 +33,19 @@ async def worker(queue, session, result_queue):
         await result_queue.put((result, execution_time))
         queue.task_done()
 
+
+async def result_writer(result_queue, file_path):
+    with open(file_path, 'w') as f:
+        while True:
+            try:
+                result, execution_time = await result_queue.get()
+                json.dump({'url': result[0], 'status_code': result[1], 'execution_time': execution_time}, f)
+                f.write('\n')
+                result_queue.task_done()
+            except asyncio.CancelledError:
+                break
+
+
 async def fetch_urls(urls, file_path):
     queue = asyncio.Queue()
     result_queue = asyncio.Queue()
@@ -45,24 +56,18 @@ async def fetch_urls(urls, file_path):
             task = asyncio.create_task(worker(queue, session, result_queue))
             tasks.append(task)
 
+        result_writer_task = asyncio.create_task(result_writer(result_queue, file_path))
+
         for url in urls:
             await queue.put(url)
 
         await queue.join()
 
-        results = []
-        while not result_queue.empty():
-            result, execution_time = await result_queue.get()
-            results.append((result, execution_time))
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
-    with open(file_path, 'w') as f:
-        for (url, status_code), execution_time in results:
-            json.dump({'url': url, 'status_code': status_code, 'execution_time': execution_time}, f)
-            f.write('\n')
-
-    for task in tasks:
-        task.cancel()
-    await asyncio.gather(*tasks, return_exceptions=True)
+        result_writer_task.cancel()
 
 if __name__ == '__main__':
     print('script launch')

@@ -10,10 +10,9 @@ def single(max_processing_time):
             lock_name = f"lock:{func.__name__}"
             lock_timeout = max_processing_time.total_seconds()
 
-            if redis_client.exists(lock_name):
+            if not redis_client.set(lock_name, "locked", ex=lock_timeout, nx=True):
                 raise Exception(f"Функция {func.__name__} уже выполняется")
 
-            redis_client.set(lock_name, "locked", ex=lock_timeout)
             try:
                 result = func(*args, **kwargs)
             finally:

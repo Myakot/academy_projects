@@ -72,7 +72,7 @@ async def fetch_urls(urls, file_path):
 if __name__ == '__main__':
     print('script launch')
     start_time = time.time()
-    asyncio.run(fetch_urls(urls, './results.json'))
+    asyncio.run(fetch_urls(urls, 'results.json'))
     end_time = time.time()
     print(f'''{'----'*7}\nscript finished in {end_time - start_time:.2f}\n{'----'*7}''')
     print('script end')

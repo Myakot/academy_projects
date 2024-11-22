@@ -2,8 +2,8 @@ import redis
 import json
 
 class RedisQueue:
-    def __init__(self, host='localhost', port=6380, db=0, queue_name='my_queue'):
-        self.redis = redis.Redis(host=host, port=port, db=db)
+    def __init__(self, redis_instance, queue_name='my_queue'):
+        self.redis = redis_instance
         self.queue_name = queue_name
 
     def publish(self, msg: dict):
@@ -15,8 +15,10 @@ class RedisQueue:
             return None
         return json.loads(msg)
 
+# Использование
 if __name__ == '__main__':
-    q = RedisQueue()
+    redis_instance = redis.Redis(host='localhost', port=6380, db=0)
+    q = RedisQueue(redis_instance)
     q.publish({'a': 1})
     q.publish({'b': 2})
     q.publish({'c': 3})
